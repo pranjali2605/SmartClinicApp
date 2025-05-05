@@ -1,32 +1,26 @@
 package com.smartclinic.service;
 
+import com.smartclinic.dao.AppointmentDAO;
 import com.smartclinic.model.Appointment;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
 
 public class AppointmentService {
+    private final AppointmentDAO dao = new AppointmentDAO();
 
-    private List<Appointment> appointmentList = new LinkedList<>();
-
-    public void bookAppointment(String id, String patient, String doctor, LocalDateTime dateTime) {
-        Appointment appt = new Appointment(id, patient, doctor, dateTime);
-        appointmentList.add(appt);
-        System.out.println("✅ Appointment booked successfully!");
+    public boolean bookAppointment(Appointment appt) {
+        return dao.bookAppointment(appt);
     }
 
-    public void cancelAppointment(String id) {
-        appointmentList.removeIf(appt -> appt.getAppointmentId().equals(id));
-        System.out.println("🗑️ Appointment cancelled (if existed).");
+    public boolean cancelAppointment(String id) {
+        return dao.cancelAppointment(id);
     }
 
-    public void viewAppointments() {
-        if (appointmentList.isEmpty()) {
-            System.out.println("❗ No appointments to display.");
-            return;
-        }
-        appointmentList.forEach(System.out::println);
+    public Appointment getAppointment(String id) {
+        return dao.getAppointmentById(id);
     }
 
-    // Additional methods for sorting/searching to come here
+    public List<Appointment> getAllAppointments() {
+        return dao.getAllAppointments();
+    }
 }

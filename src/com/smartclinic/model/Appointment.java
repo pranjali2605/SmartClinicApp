@@ -1,48 +1,34 @@
 package com.smartclinic.model;
 
-import java.time.LocalDateTime;
-
 public class Appointment {
-    private String appointmentId;
-    private String patientName;
-    private String doctorName;
-    private LocalDateTime dateTime;
+    private String id;
+    private String patientId;
+    private String doctorId;
+    private String date;
+    private String timeSlot;
+    private String status; // e.g., "Confirmed", "Waiting"
 
-    public Appointment(String appointmentId, String patientName, String doctorName, LocalDateTime dateTime) {
-        this.appointmentId = appointmentId;
-        this.patientName = patientName;
-        this.doctorName = doctorName;
-        this.dateTime = dateTime;
+    public Appointment(String id, String patientId, String doctorId, String date, String timeSlot, String status) {
+        this.id = id;
+        this.patientId = patientId;
+        this.doctorId = doctorId;
+        this.date = date;
+        this.timeSlot = timeSlot;
+        this.status = status;
     }
 
-    // Getters and Setters
-    public String getAppointmentId() {
-        return appointmentId;
-    }
+    public String getId() { return id; }
+    public String getPatientId() { return patientId; }
+    public String getDoctorId() { return doctorId; }
+    public String getDate() { return date; }
+    public String getTimeSlot() { return timeSlot; }
+    public String getStatus() { return status; }
 
-    public String getPatientName() {
-        return patientName;
-    }
-
-    public String getDoctorName() {
-        return doctorName;
-    }
-
-    public LocalDateTime getDateTime() {
-        return dateTime;
-    }
-
-    public void setDateTime(LocalDateTime dateTime) {
-        this.dateTime = dateTime;
-    }
+    public void setStatus(String status) { this.status = status; }
 
     @Override
     public String toString() {
-        return "Appointment{" +
-                "ID='" + appointmentId + '\'' +
-                ", Patient='" + patientName + '\'' +
-                ", Doctor='" + doctorName + '\'' +
-                ", DateTime=" + dateTime +
-                '}';
+        return "Appointment ID: " + id + ", Patient: " + patientId + ", Doctor: " + doctorId +
+                ", Date: " + date + ", Time: " + timeSlot + ", Status: " + status;
     }
 }
