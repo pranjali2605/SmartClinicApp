@@ -39,6 +39,10 @@ public class AppointmentMenu {
     }
 
     private static void bookAppointment() {
+
+        System.out.print("Enter patient ID: ");
+        String patientId = sc.nextLine();
+
         System.out.print("Enter patient name: ");
         String patientName = sc.nextLine();
 
@@ -90,10 +94,10 @@ public class AppointmentMenu {
 
         // Create appointment
         String apptId = "A" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Appointment appt = new Appointment(apptId, patientName, selectedDoctor.getId(), issue, date, timeSlot, "Confirmed");
+        Appointment appt = new Appointment(apptId, patientId, patientName, selectedDoctor.getId(), issue, date, timeSlot, "Confirmed");
 
 
-        if (service.bookAppointment(appt)) {
+        if (service.bookAppointment(issue, appt)) {
             System.out.println("[✓] Appointment booked successfully: " + apptId);
         } else {
             System.out.println("[!] Could not book appointment. Try again later.");
@@ -176,7 +180,7 @@ public class AppointmentMenu {
 
         for (Appointment appt : list) {
             System.out.printf("%-10s %-15s %-12s %-15s %-12s %-10s %-12s%n",
-                    appt.getAppointmentId(),
+                    appt.getId(),
                     appt.getPatientName(),
                     appt.getDoctorId(),
                     appt.getIssue(),

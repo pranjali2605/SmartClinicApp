@@ -14,8 +14,11 @@ public class AppointmentService {
     private final AppointmentDAO appointmentDAO = new AppointmentDAO();
     private final DoctorDAO doctorDAO = new DoctorDAO();
 
-    public boolean bookAppointment(Appointment appt) {
-        return appointmentDAO.bookAppointment(appt);
+//    public boolean bookAppointment(Appointment appt) {
+//        return appointmentDAO.bookAppointment(appt);
+//    }
+    public boolean bookAppointment(String issue, Appointment appt) {
+        return appointmentDAO.bookAppointment(issue, appt);
     }
 
     public boolean cancelAppointment(String id) {
