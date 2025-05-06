@@ -1,7 +1,6 @@
 package com.smartclinic.dao;
 
 import com.smartclinic.model.Patient;
-
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,7 +8,7 @@ import java.util.List;
 public class PatientDAO {
 
     public boolean addPatient(Patient patient) {
-        String sql = "INSERT INTO patients (id, name, age, contact) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO patients (id, name, age, contact, gender, issue) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -17,6 +16,8 @@ public class PatientDAO {
             stmt.setString(2, patient.getName());
             stmt.setInt(3, patient.getAge());
             stmt.setString(4, patient.getContact());
+            stmt.setString(5, patient.getGender());
+            stmt.setString(6, patient.getIssue());
 
             return stmt.executeUpdate() > 0;
 
@@ -39,7 +40,10 @@ public class PatientDAO {
                         rs.getString("id"),
                         rs.getString("name"),
                         rs.getInt("age"),
-                        rs.getString("contact"));
+                        rs.getString("contact"),
+                        rs.getString("gender"),
+                        rs.getString("issue")
+                );
             }
 
         } catch (SQLException e) {
@@ -49,14 +53,16 @@ public class PatientDAO {
     }
 
     public boolean updatePatient(Patient patient) {
-        String sql = "UPDATE patients SET name = ?, age = ?, contact = ? WHERE id = ?";
+        String sql = "UPDATE patients SET name = ?, age = ?, contact = ?, gender = ?, issue = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, patient.getName());
             stmt.setInt(2, patient.getAge());
             stmt.setString(3, patient.getContact());
-            stmt.setString(4, patient.getId());
+            stmt.setString(4, patient.getGender());
+            stmt.setString(5, patient.getIssue());
+            stmt.setString(6, patient.getId());
 
             return stmt.executeUpdate() > 0;
 
@@ -92,7 +98,10 @@ public class PatientDAO {
                         rs.getString("id"),
                         rs.getString("name"),
                         rs.getInt("age"),
-                        rs.getString("contact"));
+                        rs.getString("contact"),
+                        rs.getString("gender"),
+                        rs.getString("issue")
+                );
                 list.add(p);
             }
 

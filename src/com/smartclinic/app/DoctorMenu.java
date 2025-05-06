@@ -5,6 +5,7 @@ import com.smartclinic.service.DoctorService;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class DoctorMenu {
     private static final DoctorService service = new DoctorService();
@@ -27,7 +28,9 @@ public class DoctorMenu {
                 case 3 -> deleteDoctor();
                 case 4 -> searchDoctor();
                 case 5 -> viewAllDoctors();
-                case 6 -> { return; }
+                case 6 -> {
+                    return;
+                }
                 default -> System.out.println("Invalid choice.");
             }
         }
@@ -95,22 +98,66 @@ public class DoctorMenu {
 
     private static void searchDoctor() {
         sc.nextLine();
-        System.out.print("Enter Doctor ID: ");
-        String id = sc.nextLine();
-        Doctor d = service.getDoctor(id);
-        if (d != null) {
-            System.out.println(d);
-        } else {
-            System.out.println("Doctor not found.");
+        System.out.print("Search by (1) ID, (2) Name, (3) Specialization: ");
+        int option = sc.nextInt();
+        sc.nextLine(); // consume newline
+
+        List<Doctor> results = null;
+        switch (option) {
+            case 1 -> {
+                System.out.print("Enter Doctor ID: ");
+                String id = sc.nextLine();
+                Doctor d = service.getDoctor(id);
+                results = (d != null) ? List.of(d) : List.of();
+            }
+            case 2 -> {
+                System.out.print("Enter name to search: ");
+                String name = sc.nextLine().toLowerCase();
+                results = service.getAllDoctors().stream()
+                        .filter(doc -> doc.getName().toLowerCase().contains(name))
+                        .collect(Collectors.toList());
+            }
+            case 3 -> {
+                System.out.print("Enter specialization to search: ");
+                String spec = sc.nextLine().toLowerCase();
+                results = service.getAllDoctors().stream()
+                        .filter(doc -> doc.getSpecialization().toLowerCase().contains(spec))
+                        .collect(Collectors.toList());
+            }
+            default -> {
+                System.out.println("Invalid option.");
+                return;
+            }
         }
+
+        System.out.println("\n--- SEARCH RESULTS ---");
+        printDoctorTable(results);
     }
 
     private static void viewAllDoctors() {
+        System.out.println("\n--- ALL DOCTORS ---");
         List<Doctor> list = service.getAllDoctors();
-        if (list.isEmpty()) {
-            System.out.println("No doctors found.");
-        } else {
-            list.forEach(System.out::println);
+        printDoctorTable(list);
+    }
+
+    private static void printDoctorTable(List<Doctor> doctors) {
+        printDoctorTableHeader();
+        if (doctors.isEmpty()) {
+            System.out.println("No doctors found.\n");
+            return;
         }
+        for (Doctor doc : doctors) {
+            printDoctorRow(doc);
+        }
+    }
+
+    private static void printDoctorTableHeader() {
+        System.out.printf("%-10s %-20s %-20s %-30s%n", "ID", "Name", "Specialization", "Time Slots");
+        System.out.println("=".repeat(85));
+    }
+
+    private static void printDoctorRow(Doctor doc) {
+        System.out.printf("%-10s %-20s %-20s %-30s%n",
+                doc.getId(), doc.getName(), doc.getSpecialization(), doc.getTimeSlots());
     }
 }

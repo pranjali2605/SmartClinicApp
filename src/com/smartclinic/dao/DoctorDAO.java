@@ -102,4 +102,14 @@ public class DoctorDAO {
 
         return list;
     }
+
+//    public List<Doctor> getDoctorAsListById(String id) {
+//        Doctor d = getDoctorById(id);
+//        if (d != null) {
+//            return List.of(d);
+//        } else {
+//            return new LinkedList<>();
+//        }
+//    }
+
 }

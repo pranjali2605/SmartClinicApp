@@ -35,16 +35,38 @@ public class PatientMenu {
 
     private static void addPatient() {
         sc.nextLine(); // Clear buffer
-        System.out.print("Enter Patient ID: ");
-        String id = sc.nextLine();
+
+        String id;
+        while (true) {
+            System.out.print("Enter Patient ID: ");
+            id = sc.nextLine();
+            if (service.getPatient(id) != null) {
+                System.out.println("[✗] ID already exists. Please enter a different ID.");
+            } else break;
+        }
+
         System.out.print("Enter Name: ");
         String name = sc.nextLine();
+
         System.out.print("Enter Age: ");
         int age = sc.nextInt(); sc.nextLine();
-        System.out.print("Enter Contact: ");
-        String contact = sc.nextLine();
 
-        if (service.addPatient(new Patient(id, name, age, contact))) {
+        String contact;
+        while (true) {
+            System.out.print("Enter Contact (10 digits): ");
+            contact = sc.nextLine();
+            if (contact.matches("\\d{10}")) break;
+            else System.out.println("[✗] Invalid contact number. Try again.");
+        }
+
+        System.out.print("Enter Gender (M/F/O): ");
+        String gender = sc.nextLine();
+
+        System.out.print("Enter Health Issue: ");
+        String issue = sc.nextLine();
+
+        Patient newPatient = new Patient(id, name, age, contact, gender, issue);
+        if (service.addPatient(newPatient)) {
             System.out.println("[✓] Patient added.");
         } else {
             System.out.println("[✗] Failed to add.");
@@ -70,11 +92,29 @@ public class PatientMenu {
         String ageInput = sc.nextLine();
         int age = ageInput.isBlank() ? existing.getAge() : Integer.parseInt(ageInput);
 
-        System.out.print("Enter new Contact (" + existing.getContact() + "): ");
-        String contact = sc.nextLine();
-        contact = contact.isBlank() ? existing.getContact() : contact;
+        String contact;
+        while (true) {
+            System.out.print("Enter new Contact (" + existing.getContact() + "): ");
+            contact = sc.nextLine();
+            if (contact.isBlank()) {
+                contact = existing.getContact();
+                break;
+            } else if (contact.matches("\\d{10}")) {
+                break;
+            } else {
+                System.out.println("[✗] Invalid contact number. Try again.");
+            }
+        }
 
-        Patient updated = new Patient(id, name, age, contact);
+        System.out.print("Enter Gender (" + existing.getGender() + "): ");
+        String gender = sc.nextLine();
+        gender = gender.isBlank() ? existing.getGender() : gender;
+
+        System.out.print("Enter Health Issue (" + existing.getIssue() + "): ");
+        String issue = sc.nextLine();
+        issue = issue.isBlank() ? existing.getIssue() : issue;
+
+        Patient updated = new Patient(id, name, age, contact, gender, issue);
         if (service.updatePatient(updated)) {
             System.out.println("[✓] Patient updated.");
         } else {
@@ -99,7 +139,8 @@ public class PatientMenu {
         String id = sc.nextLine();
         Patient p = service.getPatient(id);
         if (p != null) {
-            System.out.println(p);
+            printTableHeader();
+            printPatientRow(p);
         } else {
             System.out.println("Patient not found.");
         }
@@ -118,15 +159,12 @@ public class PatientMenu {
     }
 
     private static void printTableHeader() {
-        System.out.printf("%-10s %-15s %-5s %-12s%n", "ID", "Name", "Age", "Contact");
-
-//        System.out.printf("%-10s %-15s %-5s %-12s %-8s %-20s%n", "ID", "Name", "Age", "Contact", "Gender", "Issue");
+        System.out.printf("%-10s %-15s %-5s %-12s %-8s %-20s%n", "ID", "Name", "Age", "Contact", "Gender", "Issue");
         System.out.println("--------------------------------------------------------------------------------");
     }
 
     private static void printPatientRow(Patient p) {
-        System.out.printf("%-10s %-15s %-5d %-12s%n",
-                p.getId(), p.getName(), p.getAge(), p.getContact());
-//                p.getId(), p.getName(), p.getAge(), p.getContact(), p.getGender(), p.getIssue());
+        System.out.printf("%-10s %-15s %-5d %-12s %-8s %-20s%n",
+                p.getId(), p.getName(), p.getAge(), p.getContact(), p.getGender(), p.getIssue());
     }
 }
