@@ -1,12 +1,22 @@
 package com.smartclinic.dao;
 
 import com.smartclinic.model.Patient;
+
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Data Access Object (DAO) class for handling CRUD operations related to patients.
+ * Provides methods to add, update, delete, and fetch patients from the database.
+ */
 public class PatientDAO {
 
+    /**
+     * Adds a new patient to the database.
+     * @param patient The patient object containing the details to be added.
+     * @return boolean True if the patient was successfully added, false otherwise.
+     */
     public boolean addPatient(Patient patient) {
         String sql = "INSERT INTO patients (id, name, age, contact, gender, issue) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -27,6 +37,11 @@ public class PatientDAO {
         }
     }
 
+    /**
+     * Retrieves a patient from the database by their ID.
+     * @param id The ID of the patient to retrieve.
+     * @return Patient The patient object, or null if no patient is found with the given ID.
+     */
     public Patient getPatientById(String id) {
         String sql = "SELECT * FROM patients WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -52,6 +67,11 @@ public class PatientDAO {
         return null;
     }
 
+    /**
+     * Updates the details of an existing patient in the database.
+     * @param patient The patient object containing the updated details.
+     * @return boolean True if the patient details were successfully updated, false otherwise.
+     */
     public boolean updatePatient(Patient patient) {
         String sql = "UPDATE patients SET name = ?, age = ?, contact = ?, gender = ?, issue = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -72,6 +92,11 @@ public class PatientDAO {
         }
     }
 
+    /**
+     * Deletes a patient from the database.
+     * @param id The ID of the patient to be deleted.
+     * @return boolean True if the patient was successfully deleted, false otherwise.
+     */
     public boolean deletePatient(String id) {
         String sql = "DELETE FROM patients WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -86,6 +111,10 @@ public class PatientDAO {
         }
     }
 
+    /**
+     * Retrieves all patients from the database.
+     * @return List<Patient> A list of all patient objects in the database.
+     */
     public List<Patient> getAllPatients() {
         List<Patient> list = new LinkedList<>();
         String sql = "SELECT * FROM patients";

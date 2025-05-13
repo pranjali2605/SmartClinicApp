@@ -11,29 +11,39 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * AppointmentMenu is the class responsible for displaying the Appointment Management GUI.
+ * It provides functionalities for viewing, searching, sorting, booking, and canceling appointments.
+ */
 public class AppointmentMenu {
+
+    // Services to interact with the appointment and patient data
     private static final AppointmentService apptService = new AppointmentService();
     private static final PatientService patientService = new PatientService();
 
-
+    /**
+     * Initializes and displays the Appointment Management menu.
+     */
     public static void showMenuGUI() {
+        // JFrame setup for the GUI
         JFrame frame = new JFrame("Appointment Management");
         frame.setSize(900, 500);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.setLayout(new BorderLayout());
 
-        // Table and model
+        // Table setup for displaying appointments
         DefaultTableModel model = new DefaultTableModel(
                 new String[]{"Appt ID", "Patient", "Doctor ID", "Issue", "Date", "Time", "Status"}, 0);
         JTable table = new JTable(model);
-        refreshTable(model);
+        refreshTable(model); // Populate the table with current appointments
 
-        // ----- Top Panel: Search + Sort -----
+        // Panel for search and sorting options
         JPanel searchSortPanel = new JPanel();
         JTextField searchField = new JTextField(15);
         JButton searchBtn = new JButton("Search");
@@ -44,11 +54,11 @@ public class AppointmentMenu {
         searchSortPanel.add(searchBtn);
         searchSortPanel.add(sortBtn);
 
-        // Action listeners for search and sort
+        // Action listeners for search and sorting functionality
         searchBtn.addActionListener(e -> searchAppointments(searchField.getText(), model));
         sortBtn.addActionListener(e -> sortAppointments(model));
 
-        // ----- Bottom Panel: Action Buttons -----
+        // Panel for buttons like booking, canceling, and refreshing
         JPanel buttonPanel = new JPanel();
         JButton bookBtn = new JButton("Book Appointment");
         JButton cancelBtn = new JButton("Cancel Appointment");
@@ -60,10 +70,11 @@ public class AppointmentMenu {
         buttonPanel.add(refreshBtn);
         buttonPanel.add(backToMainBtn);
 
-        // Button Actions
+        // Button actions for appointment booking, canceling, and refreshing
         bookBtn.addActionListener(e -> showBookingForm(model));
 
         cancelBtn.addActionListener(e -> {
+            // Cancel selected appointment
             int row = table.getSelectedRow();
             if (row != -1) {
                 String apptId = (String) model.getValueAt(row, 0);
@@ -71,7 +82,7 @@ public class AppointmentMenu {
                 if (confirm == JOptionPane.YES_OPTION) {
                     if (apptService.cancelAppointment(apptId)) {
                         JOptionPane.showMessageDialog(frame, "Cancelled.");
-                        refreshTable(model);
+                        refreshTable(model); // Refresh table after cancellation
                     } else {
                         JOptionPane.showMessageDialog(frame, "Failed to cancel.");
                     }
@@ -81,8 +92,10 @@ public class AppointmentMenu {
             }
         });
 
+        // Refresh the table with all appointments
         refreshBtn.addActionListener(e -> refreshTable(model));
 
+        // Go back to the main menu
         backToMainBtn.addActionListener(e -> {
             frame.dispose(); // Close current window
             SmartClinicApp.openMainMenu(); // Return to main menu
@@ -96,10 +109,14 @@ public class AppointmentMenu {
         frame.setVisible(true);
     }
 
-
+    /**
+     * Refreshes the table to show the latest appointments.
+     *
+     * @param model The table model to refresh
+     */
     private static void refreshTable(DefaultTableModel model) {
-        model.setRowCount(0);
-        List<Appointment> list = apptService.getAllAppointments();
+        model.setRowCount(0); // Clear current table content
+        List<Appointment> list = apptService.getAllAppointments(); // Retrieve all appointments
         for (Appointment a : list) {
             model.addRow(new Object[]{
                     a.getId(), a.getPatientName(), a.getDoctorId(),
@@ -108,17 +125,24 @@ public class AppointmentMenu {
         }
     }
 
+    /**
+     * Searches for appointments based on a query (case-insensitive).
+     *
+     * @param query The search query (patient, doctor, or date)
+     * @param model The table model to update with search results
+     */
     private static void searchAppointments(String query, DefaultTableModel model) {
         model.setRowCount(0); // Clear current table
 
         List<Appointment> list = apptService.getAllAppointments();
-        String lowerQuery = query.toLowerCase(); // Make the search case-insensitive
+        String lowerQuery = query.toLowerCase(); // Case-insensitive search
 
+        // Filter appointments based on query
         List<Appointment> filteredList = list.stream()
                 .filter(a -> a.getPatientName().toLowerCase().contains(lowerQuery) ||
                         a.getDoctorId().toLowerCase().contains(lowerQuery) ||
                         a.getDate().toLowerCase().contains(lowerQuery))
-                .collect(Collectors.toList());
+                .toList();
 
         for (Appointment a : filteredList) {
             model.addRow(new Object[]{
@@ -132,11 +156,17 @@ public class AppointmentMenu {
         }
     }
 
+    /**
+     * Sorts the appointments by date in ascending order.
+     *
+     * @param model The table model to update with sorted appointments
+     */
     private static void sortAppointments(DefaultTableModel model) {
         model.setRowCount(0); // Clear current table
         List<Appointment> list = apptService.getAllAppointments();
 
-        list.sort((a1, a2) -> a1.getDate().compareTo(a2.getDate())); // Sorting by date
+        // Sort appointments by date
+        list.sort(Comparator.comparing(Appointment::getDate));
 
         for (Appointment a : list) {
             model.addRow(new Object[]{
@@ -146,6 +176,11 @@ public class AppointmentMenu {
         }
     }
 
+    /**
+     * Displays the appointment booking form where users can select patient, doctor, date, and time.
+     *
+     * @param model The table model to refresh after booking an appointment
+     */
     private static void showBookingForm(DefaultTableModel model) {
         String patientId = JOptionPane.showInputDialog("Enter Patient ID:");
         if (patientId == null || patientId.trim().isEmpty()) return;
@@ -165,10 +200,10 @@ public class AppointmentMenu {
             return;
         }
 
-        StringBuilder patientDetails = new StringBuilder("Patient Details:\n")
-                .append("Name: ").append(p.getName()).append("\n")
-                .append("Issue: ").append(issue).append("\n")
-                .append("Matching Specialization: ").append(specialization).append("\n\n");
+        String patientDetails = "Patient Details:\n" +
+                "Name: " + p.getName() + "\n" +
+                "Issue: " + issue + "\n" +
+                "Matching Specialization: " + specialization + "\n\n";
 
         String[] doctorOptions = matchedDoctors.stream()
                 .map(doc -> doc.getName() + " (ID: " + doc.getId() + ") | " + doc.getSpecialization())

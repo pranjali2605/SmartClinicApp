@@ -3,7 +3,13 @@ package com.smartclinic.util;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utility class to map patient issues to appropriate medical specializations.
+ * This class stores predefined mappings between common health issues and their corresponding medical specialties.
+ */
 public class SpecializationMapper {
+
+    // A static map that stores the relationship between health issues and doctor specializations
     private static final Map<String, String> issueToSpecialization = new HashMap<>();
 
     static {
@@ -87,14 +93,23 @@ public class SpecializationMapper {
         issueToSpecialization.put("fever",        "General Physician");
     }
 
+    /**
+     * Given an issue, returns the corresponding specialization for a doctor.
+
+     * This method performs a case-insensitive search to find the matching specialization for a health issue.
+     *
+     * @param issue The health issue to be mapped to a specialization.
+     * @return The specialization corresponding to the issue, or null if no match is found.
+     */
     public static String getSpecialization(String issue) {
-        if (issue == null) return null;
-        String lowerCaseIssue = issue.toLowerCase();
+        if (issue == null) return null;  // Return null if the issue is null
+        String lowerCaseIssue = issue.toLowerCase();  // Convert the issue to lowercase to make it case-insensitive
+        // Loop through all the keys in the issueToSpecialization map and check if the issue contains any of the keywords
         for (String keyword : issueToSpecialization.keySet()) {
             if (lowerCaseIssue.contains(keyword)) {
-                return issueToSpecialization.get(keyword);
+                return issueToSpecialization.get(keyword);  // Return the corresponding specialization
             }
         }
-        return null; // If no match found
+        return null;  // Return null if no match is found
     }
 }

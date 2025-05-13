@@ -6,8 +6,17 @@ import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Data Access Object (DAO) class for handling CRUD operations related to doctors.
+ * Provides methods to add, update, delete, and fetch doctors from the database.
+ */
 public class DoctorDAO {
 
+    /**
+     * Adds a new doctor to the database.
+     * @param doctor The doctor object containing the details to be added.
+     * @return boolean True if the doctor was successfully added, false otherwise.
+     */
     public boolean addDoctor(Doctor doctor) {
         String sql = "INSERT INTO doctors (id, name, specialization, time_slots) VALUES (?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -26,6 +35,11 @@ public class DoctorDAO {
         }
     }
 
+    /**
+     * Updates the details of an existing doctor in the database.
+     * @param doctor The doctor object containing the updated details.
+     * @return boolean True if the doctor details were successfully updated, false otherwise.
+     */
     public boolean updateDoctor(Doctor doctor) {
         String sql = "UPDATE doctors SET name = ?, specialization = ?, time_slots = ? WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -44,6 +58,11 @@ public class DoctorDAO {
         }
     }
 
+    /**
+     * Deletes a doctor from the database.
+     * @param id The ID of the doctor to be deleted.
+     * @return boolean True if the doctor was successfully deleted, false otherwise.
+     */
     public boolean deleteDoctor(String id) {
         String sql = "DELETE FROM doctors WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -58,6 +77,11 @@ public class DoctorDAO {
         }
     }
 
+    /**
+     * Retrieves a doctor from the database by their ID.
+     * @param id The ID of the doctor to retrieve.
+     * @return Doctor The doctor object, or null if no doctor is found with the given ID.
+     */
     public static Doctor getDoctorById(String id) {
         String sql = "SELECT * FROM doctors WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -80,6 +104,10 @@ public class DoctorDAO {
         return null;
     }
 
+    /**
+     * Retrieves all doctors from the database.
+     * @return List<Doctor> A list of all doctor objects in the database.
+     */
     public List<Doctor> getAllDoctors() {
         List<Doctor> list = new LinkedList<>();
         String sql = "SELECT * FROM doctors";
@@ -102,5 +130,4 @@ public class DoctorDAO {
 
         return list;
     }
-
 }
