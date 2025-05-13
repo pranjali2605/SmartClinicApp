@@ -58,7 +58,7 @@ public class DoctorDAO {
         }
     }
 
-    public Doctor getDoctorById(String id) {
+    public static Doctor getDoctorById(String id) {
         String sql = "SELECT * FROM doctors WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

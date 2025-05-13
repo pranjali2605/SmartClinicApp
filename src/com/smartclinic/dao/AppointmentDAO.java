@@ -9,7 +9,6 @@ import java.util.*;
 public class AppointmentDAO {
     private final Map<String, Queue<String>> waitlists = new HashMap<>();
 
-    // Book appointment using issue instead of doctorId directly
     public boolean bookAppointment(String issue, Appointment appt) {
         String specialization = SpecializationMapper.getSpecialization(issue);
         String doctorId = getDoctorIdBySpecialization(specialization);
@@ -19,7 +18,7 @@ public class AppointmentDAO {
             return false;
         }
 
-        appt.setDoctorId(doctorId); // set doctorId in appointment
+        appt.setDoctorId(doctorId);
 
         if (isSlotAvailable(doctorId, appt.getDate(), appt.getTimeSlot())) {
             return saveAppointment(appt);
@@ -30,7 +29,6 @@ public class AppointmentDAO {
         }
     }
 
-    // Save appointment to DB
     private boolean saveAppointment(Appointment appt) {
         String sql = "INSERT INTO appointments (id, patient_id, doctor_id, date, time_slot, issue, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
@@ -41,7 +39,7 @@ public class AppointmentDAO {
             stmt.setString(3, appt.getDoctorId());
             stmt.setString(4, appt.getDate());
             stmt.setString(5, appt.getTimeSlot());
-            stmt.setString(6,appt.getIssue());
+            stmt.setString(6, appt.getIssue());
             stmt.setString(7, appt.getStatus());
 
             return stmt.executeUpdate() > 0;
@@ -51,7 +49,6 @@ public class AppointmentDAO {
         }
     }
 
-    // Fetch doctor_id based on specialization
     private String getDoctorIdBySpecialization(String specialization) {
         String sql = "SELECT id FROM doctors WHERE specialization = ? LIMIT 1";
         try (Connection conn = DBConnection.getConnection();
@@ -59,18 +56,15 @@ public class AppointmentDAO {
 
             stmt.setString(1, specialization);
             ResultSet rs = stmt.executeQuery();
-
             if (rs.next()) {
                 return rs.getString("id");
             }
-
         } catch (SQLException e) {
             System.out.println("[✗] Error finding doctor: " + e.getMessage());
         }
         return null;
     }
 
-    // Check if slot is available
     public boolean isSlotAvailable(String doctorId, String date, String timeSlot) {
         String sql = "SELECT COUNT(*) FROM appointments WHERE doctor_id = ? AND date = ? AND time_slot = ?";
         try (Connection conn = DBConnection.getConnection();
@@ -88,18 +82,11 @@ public class AppointmentDAO {
         }
     }
 
-    // Add patient to waitlist
     private void enqueueWaitlist(String doctorId, String date, String timeSlot, String patientId) {
-        String key = buildWaitlistKey(doctorId, date, timeSlot);
+        String key = doctorId + "_" + date + "_" + timeSlot;
         waitlists.computeIfAbsent(key, k -> new LinkedList<>()).add(patientId);
     }
 
-    // Build waitlist key
-    private String buildWaitlistKey(String doctorId, String date, String timeSlot) {
-        return doctorId + "_" + date + "_" + timeSlot;
-    }
-
-    // Cancel appointment
     public boolean cancelAppointment(String appointmentId) {
         String selectSql = "SELECT * FROM appointments WHERE id = ?";
         String deleteSql = "DELETE FROM appointments WHERE id = ?";
@@ -132,29 +119,20 @@ public class AppointmentDAO {
         } catch (SQLException e) {
             System.out.println("[✗] Error cancelling appointment: " + e.getMessage());
         }
-
         return false;
     }
 
-    // Reassign a cancelled slot to waitlisted patient
     private void reassignFromWaitlist(String doctorId, String date, String timeSlot) {
-        String key = buildWaitlistKey(doctorId, date, timeSlot);
+        String key = doctorId + "_" + date + "_" + timeSlot;
         Queue<String> queue = waitlists.get(key);
 
         if (queue != null && !queue.isEmpty()) {
             String nextPatientId = queue.poll();
             String newApptId = "A" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-            Appointment reassigned = new Appointment(
-                    newApptId,        // id
-                    nextPatientId,    // patientId
-                    "",               // patientName (lookup or leave blank)
-                    doctorId,         // doctorId
-                    "",               // issue       (original issue not stored in waitlist)
-                    date,             // date
-                    timeSlot,         // timeSlot
-                    "Confirmed"       // status
-            );
 
+            Appointment reassigned = new Appointment(
+                    newApptId, nextPatientId, "", doctorId, "", date, timeSlot, "Confirmed"
+            );
 
             if (saveAppointment(reassigned)) {
                 System.out.println("[✓] Reassigned slot to patient in waitlist: " + nextPatientId);
@@ -166,12 +144,10 @@ public class AppointmentDAO {
         }
     }
 
-    // Get all appointments with patient name
     public List<Appointment> getAllAppointments() {
         List<Appointment> list = new ArrayList<>();
         String sql = "SELECT a.*, p.name AS patient_name FROM appointments a " +
-                "JOIN patients p ON a.patient_id = p.id " +
-                "ORDER BY a.date, a.time_slot";
+                "JOIN patients p ON a.patient_id = p.id ORDER BY a.date, a.time_slot";
 
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -179,18 +155,17 @@ public class AppointmentDAO {
 
             while (rs.next()) {
                 Appointment appt = new Appointment(
-                        rs.getString("id"),             // id
-                        rs.getString("patient_id"),     // patientId
-                        rs.getString("patient_name"),   // patientName
-                        rs.getString("doctor_id"),      // doctorId
-                        rs.getString("issue"),          // issue
-                        rs.getString("date"),           // date
-                        rs.getString("time_slot"),      // timeSlot
-                        rs.getString("status")          // status
+                        rs.getString("id"),
+                        rs.getString("patient_id"),
+                        rs.getString("patient_name"),
+                        rs.getString("doctor_id"),
+                        rs.getString("issue"),
+                        rs.getString("date"),
+                        rs.getString("time_slot"),
+                        rs.getString("status")
                 );
                 list.add(appt);
             }
-
         } catch (SQLException e) {
             System.out.println("[✗] Error fetching appointments: " + e.getMessage());
         }
@@ -198,7 +173,6 @@ public class AppointmentDAO {
         return list;
     }
 
-    // Get appointment by ID
     public Appointment getAppointmentById(String id) {
         String sql = "SELECT a.*, p.name AS patient_name FROM appointments a " +
                 "JOIN patients p ON a.patient_id = p.id WHERE a.id = ?";
@@ -210,14 +184,14 @@ public class AppointmentDAO {
 
             if (rs.next()) {
                 return new Appointment(
-                        rs.getString("id"),           // id
-                        rs.getString("patient_id"),   // patientId
-                        rs.getString("patient_name"), // patientName
-                        rs.getString("doctor_id"),    // doctorId
-                        rs.getString("issue"),        // issue
-                        rs.getString("date"),         // date
-                        rs.getString("time_slot"),    // timeSlot
-                        rs.getString("status")        // status
+                        rs.getString("id"),
+                        rs.getString("patient_id"),
+                        rs.getString("patient_name"),
+                        rs.getString("doctor_id"),
+                        rs.getString("issue"),
+                        rs.getString("date"),
+                        rs.getString("time_slot"),
+                        rs.getString("status")
                 );
             }
 
@@ -225,5 +199,30 @@ public class AppointmentDAO {
             System.out.println("[✗] Error fetching appointment: " + e.getMessage());
         }
         return null;
+    }
+
+    // ✅ NEW: Update an existing appointment
+    public boolean updateAppointment(Appointment appt) {
+        String sql = "UPDATE appointments SET date = ?, time_slot = ?, issue = ?, status = ? WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, appt.getDate());
+            stmt.setString(2, appt.getTimeSlot());
+            stmt.setString(3, appt.getIssue());
+            stmt.setString(4, appt.getStatus());
+            stmt.setString(5, appt.getId());
+
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("[✓] Appointment updated successfully.");
+                return true;
+            } else {
+                System.out.println("[!] No appointment found with the given ID.");
+            }
+        } catch (SQLException e) {
+            System.out.println("[✗] Error updating appointment: " + e.getMessage());
+        }
+        return false;
     }
 }

@@ -2,192 +2,226 @@ package com.smartclinic.app;
 
 import com.smartclinic.model.Appointment;
 import com.smartclinic.model.Doctor;
+import com.smartclinic.model.Patient;
 import com.smartclinic.service.AppointmentService;
+import com.smartclinic.service.PatientService;
 import com.smartclinic.util.SpecializationMapper;
 
-import java.util.Comparator;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class AppointmentMenu {
-    private static final AppointmentService service = new AppointmentService();
-    private static final Scanner sc = new Scanner(System.in);
+    private static final AppointmentService apptService = new AppointmentService();
+    private static final PatientService patientService = new PatientService();
 
-    public static void showMenu() {
-        while (true) {
-            System.out.println("\n--- APPOINTMENT MENU ---");
-            System.out.println("1. Book Appointment");
-            System.out.println("2. Cancel Appointment");
-            System.out.println("3. View All Appointments");
-            System.out.println("4. Search Appointments");
-            System.out.println("5. Sort Appointments");
-            System.out.println("6. Back to Main Menu");
-            System.out.print("Enter choice: ");
 
-            int choice = sc.nextInt(); sc.nextLine();
-            switch (choice) {
-                case 1 -> bookAppointment();
-                case 2 -> cancelAppointment();
-                case 3 -> viewAppointments();
-                case 4 -> searchAppointments();
-                case 5 -> sortAppointments();
-                case 6 -> { return; }
-                default -> System.out.println("Invalid choice.");
+    public static void showMenuGUI() {
+        JFrame frame = new JFrame("Appointment Management");
+        frame.setSize(900, 500);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setLayout(new BorderLayout());
+
+        // Table and model
+        DefaultTableModel model = new DefaultTableModel(
+                new String[]{"Appt ID", "Patient", "Doctor ID", "Issue", "Date", "Time", "Status"}, 0);
+        JTable table = new JTable(model);
+        refreshTable(model);
+
+        // ----- Top Panel: Search + Sort -----
+        JPanel searchSortPanel = new JPanel();
+        JTextField searchField = new JTextField(15);
+        JButton searchBtn = new JButton("Search");
+        JButton sortBtn = new JButton("Sort by Date");
+
+        searchSortPanel.add(new JLabel("Search:"));
+        searchSortPanel.add(searchField);
+        searchSortPanel.add(searchBtn);
+        searchSortPanel.add(sortBtn);
+
+        // Action listeners for search and sort
+        searchBtn.addActionListener(e -> searchAppointments(searchField.getText(), model));
+        sortBtn.addActionListener(e -> sortAppointments(model));
+
+        // ----- Bottom Panel: Action Buttons -----
+        JPanel buttonPanel = new JPanel();
+        JButton bookBtn = new JButton("Book Appointment");
+        JButton cancelBtn = new JButton("Cancel Appointment");
+        JButton refreshBtn = new JButton("View All");
+        JButton backToMainBtn = new JButton("Back to Main Menu");
+
+        buttonPanel.add(bookBtn);
+        buttonPanel.add(cancelBtn);
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(backToMainBtn);
+
+        // Button Actions
+        bookBtn.addActionListener(e -> showBookingForm(model));
+
+        cancelBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row != -1) {
+                String apptId = (String) model.getValueAt(row, 0);
+                int confirm = JOptionPane.showConfirmDialog(frame, "Cancel appointment " + apptId + "?");
+                if (confirm == JOptionPane.YES_OPTION) {
+                    if (apptService.cancelAppointment(apptId)) {
+                        JOptionPane.showMessageDialog(frame, "Cancelled.");
+                        refreshTable(model);
+                    } else {
+                        JOptionPane.showMessageDialog(frame, "Failed to cancel.");
+                    }
+                }
+            } else {
+                JOptionPane.showMessageDialog(frame, "Select an appointment to cancel.");
             }
+        });
+
+        refreshBtn.addActionListener(e -> refreshTable(model));
+
+        backToMainBtn.addActionListener(e -> {
+            frame.dispose(); // Close current window
+            SmartClinicApp.openMainMenu(); // Return to main menu
+        });
+
+        // Frame layout
+        frame.add(searchSortPanel, BorderLayout.NORTH);
+        frame.add(new JScrollPane(table), BorderLayout.CENTER);
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.setVisible(true);
+    }
+
+
+    private static void refreshTable(DefaultTableModel model) {
+        model.setRowCount(0);
+        List<Appointment> list = apptService.getAllAppointments();
+        for (Appointment a : list) {
+            model.addRow(new Object[]{
+                    a.getId(), a.getPatientName(), a.getDoctorId(),
+                    a.getIssue(), a.getDate(), a.getTimeSlot(), a.getStatus()
+            });
         }
     }
 
-    private static void bookAppointment() {
+    private static void searchAppointments(String query, DefaultTableModel model) {
+        model.setRowCount(0); // Clear current table
 
-        System.out.print("Enter patient ID: ");
-        String patientId = sc.nextLine();
+        List<Appointment> list = apptService.getAllAppointments();
+        String lowerQuery = query.toLowerCase(); // Make the search case-insensitive
 
-        System.out.print("Enter patient name: ");
-        String patientName = sc.nextLine();
+        List<Appointment> filteredList = list.stream()
+                .filter(a -> a.getPatientName().toLowerCase().contains(lowerQuery) ||
+                        a.getDoctorId().toLowerCase().contains(lowerQuery) ||
+                        a.getDate().toLowerCase().contains(lowerQuery))
+                .collect(Collectors.toList());
 
-        System.out.print("Enter issue: ");
-        String issue = sc.nextLine();
+        for (Appointment a : filteredList) {
+            model.addRow(new Object[]{
+                    a.getId(), a.getPatientName(), a.getDoctorId(),
+                    a.getIssue(), a.getDate(), a.getTimeSlot(), a.getStatus()
+            });
+        }
 
+        if (filteredList.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "No appointments found.");
+        }
+    }
+
+    private static void sortAppointments(DefaultTableModel model) {
+        model.setRowCount(0); // Clear current table
+        List<Appointment> list = apptService.getAllAppointments();
+
+        list.sort((a1, a2) -> a1.getDate().compareTo(a2.getDate())); // Sorting by date
+
+        for (Appointment a : list) {
+            model.addRow(new Object[]{
+                    a.getId(), a.getPatientName(), a.getDoctorId(),
+                    a.getIssue(), a.getDate(), a.getTimeSlot(), a.getStatus()
+            });
+        }
+    }
+
+    private static void showBookingForm(DefaultTableModel model) {
+        String patientId = JOptionPane.showInputDialog("Enter Patient ID:");
+        if (patientId == null || patientId.trim().isEmpty()) return;
+
+        Patient p = patientService.getPatient(patientId.trim());
+        if (p == null) {
+            JOptionPane.showMessageDialog(null, "Patient not found.");
+            return;
+        }
+
+        String issue = p.getIssue();
         String specialization = SpecializationMapper.getSpecialization(issue);
-        List<Doctor> matchedDoctors = service.suggestDoctorsByIssue(issue); // uses specialization internally
+        List<Doctor> matchedDoctors = apptService.suggestDoctorsByIssue(issue);
 
         if (matchedDoctors.isEmpty()) {
-            System.out.println("No doctors available for this issue/specialization.");
+            JOptionPane.showMessageDialog(null, "No doctors available for the issue: " + issue);
             return;
         }
 
-        System.out.println("Available Doctors:");
-        for (int i = 0; i < matchedDoctors.size(); i++) {
-            Doctor doc = matchedDoctors.get(i);
-            System.out.printf("%d. %s (ID: %s, Specialization: %s)%n", i + 1, doc.getName(), doc.getId(), doc.getSpecialization());
-        }
+        StringBuilder patientDetails = new StringBuilder("Patient Details:\n")
+                .append("Name: ").append(p.getName()).append("\n")
+                .append("Issue: ").append(issue).append("\n")
+                .append("Matching Specialization: ").append(specialization).append("\n\n");
 
-        System.out.print("Select doctor (enter number): ");
-        int choice = sc.nextInt();
-        sc.nextLine(); // consume newline
+        String[] doctorOptions = matchedDoctors.stream()
+                .map(doc -> doc.getName() + " (ID: " + doc.getId() + ") | " + doc.getSpecialization())
+                .toArray(String[]::new);
 
-        if (choice < 1 || choice > matchedDoctors.size()) {
-            System.out.println("Invalid doctor selection.");
+        String selectedDoctorStr = (String) JOptionPane.showInputDialog(
+                null,
+                patientDetails + "Select a doctor:",
+                "Choose Doctor",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                doctorOptions,
+                doctorOptions[0]);
+
+        if (selectedDoctorStr == null) return;
+
+        Doctor selectedDoctor = matchedDoctors.stream()
+                .filter(doc -> selectedDoctorStr.contains(doc.getId()))
+                .findFirst()
+                .orElse(null);
+
+        if (selectedDoctor == null) {
+            JOptionPane.showMessageDialog(null, "Doctor selection failed.");
             return;
         }
 
-        Doctor selectedDoctor = matchedDoctors.get(choice - 1);
-
-        System.out.println("Available Time Slots: " + selectedDoctor.getTimeSlots());
-        System.out.print("Enter preferred date (YYYY-MM-DD): ");
-        String date = sc.nextLine();
-
-        System.out.print("Enter preferred time slot (e.g., 10:00): ");
-        String timeSlot = sc.nextLine();
-
-        // Validate time slot and availability (assumes you have these methods)
-        if (!service.isTimeSlotValid(selectedDoctor, timeSlot)) {
-            System.out.println("Invalid time slot for selected doctor.");
+        String timeSlots = selectedDoctor.getTimeSlots();
+        String date = JOptionPane.showInputDialog("Enter preferred date (YYYY-MM-DD):");
+        if (!date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            JOptionPane.showMessageDialog(null, "Invalid date format.");
             return;
         }
 
-        if (!service.isDoctorAvailable(selectedDoctor.getId(), date, timeSlot)) {
-            System.out.println("Selected doctor is not available at this time.");
+        String timeSlot = JOptionPane.showInputDialog("Enter time slot (Available: " + timeSlots + "):");
+        if (timeSlot == null || !apptService.isTimeSlotValid(selectedDoctor, timeSlot)) {
+            JOptionPane.showMessageDialog(null, "Invalid time slot.");
             return;
         }
 
-        // Create appointment
+        if (!apptService.isDoctorAvailable(selectedDoctor.getId(), date, timeSlot)) {
+            JOptionPane.showMessageDialog(null, "Doctor is not available at this time.");
+            return;
+        }
+
         String apptId = "A" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Appointment appt = new Appointment(apptId, patientId, patientName, selectedDoctor.getId(), issue, date, timeSlot, "Confirmed");
+        Appointment a = new Appointment(apptId, p.getId(), p.getName(),
+                selectedDoctor.getId(), issue, date, timeSlot, "Confirmed");
 
-
-        if (service.bookAppointment(issue, appt)) {
-            System.out.println("[✓] Appointment booked successfully: " + apptId);
+        if (apptService.bookAppointment(issue, a)) {
+            JOptionPane.showMessageDialog(null, "Appointment booked. ID: " + apptId);
+            refreshTable(model);
         } else {
-            System.out.println("[!] Could not book appointment. Try again later.");
+            JOptionPane.showMessageDialog(null, "Booking failed. Try again.");
         }
-    }
-
-
-    private static void cancelAppointment() {
-        System.out.print("Enter Appointment ID to cancel: ");
-        String id = sc.nextLine();
-
-        if (service.cancelAppointment(id)) {
-            System.out.println("[✓] Appointment cancelled.");
-        } else {
-            System.out.println("[✗] Could not cancel appointment.");
-        }
-    }
-
-    private static void viewAppointments() {
-        List<Appointment> list = service.getAllAppointments();
-        if (list.isEmpty()) {
-            System.out.println("No appointments found.");
-        } else {
-            printAppointmentTable(list);
-        }
-    }
-
-    private static void searchAppointments() {
-        System.out.println("\nSearch By:");
-        System.out.println("1. Patient Name");
-        System.out.println("2. Doctor ID");
-        System.out.print("Enter choice: ");
-        int choice = sc.nextInt(); sc.nextLine();
-
-        System.out.print("Enter value: ");
-        String input = sc.nextLine();
-
-        List<Appointment> all = service.getAllAppointments();
-        List<Appointment> filtered = all.stream()
-                .filter(appt -> (choice == 1 && appt.getPatientName().equalsIgnoreCase(input)) ||
-                        (choice == 2 && appt.getDoctorId().equalsIgnoreCase(input)))
-                .toList();
-
-
-        if (filtered.isEmpty()) {
-            System.out.println("No matching records found.");
-        } else {
-            printAppointmentTable(filtered);
-        }
-    }
-
-    private static void sortAppointments() {
-        System.out.println("\nSort By:");
-        System.out.println("1. Patient ID");
-        System.out.println("2. Appointment Date/Time");
-        System.out.print("Enter choice: ");
-        int choice = sc.nextInt(); sc.nextLine();
-
-        List<Appointment> all = service.getAllAppointments();
-
-        if (choice == 1) {
-            all.sort(Comparator.comparing(Appointment::getPatientName));
-        }
-        else if (choice == 2) {
-            all.sort(Comparator.comparing(Appointment::getDate)
-                    .thenComparing(Appointment::getTimeSlot));
-        }
-
-        if (all.isEmpty()) {
-            System.out.println("No appointments to sort.");
-        } else {
-            printAppointmentTable(all);
-        }
-    }
-
-    private static void printAppointmentTable(List<Appointment> list) {
-        System.out.printf("%-10s %-15s %-12s %-15s %-12s %-10s %-12s%n",
-                "Appt ID", "Patient Name", "Doctor ID", "Issue", "Date", "Time", "Status");
-        System.out.println("-------------------------------------------------------------------------------------------");
-
-        for (Appointment appt : list) {
-            System.out.printf("%-10s %-15s %-12s %-15s %-12s %-10s %-12s%n",
-                    appt.getId(),
-                    appt.getPatientName(),
-                    appt.getDoctorId(),
-                    appt.getIssue(),
-                    appt.getDate(),
-                    appt.getTimeSlot(),
-                    appt.getStatus());
-        }
-
     }
 }

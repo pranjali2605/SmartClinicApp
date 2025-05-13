@@ -37,13 +37,8 @@ public class Appointment {
 
     // Setters
     public void setId(String id) { this.id = id; }
-    public void setPatientId(String patientId) { this.patientId = patientId; }
-    public void setPatientName(String patientName) { this.patientName = patientName; }
     public void setDoctorId(String doctorId) { this.doctorId = doctorId; }
-    public void setIssue(String issue) { this.issue = issue; }
-    public void setDate(String date) { this.date = date; }
-    public void setTimeSlot(String timeSlot) { this.timeSlot = timeSlot; }
-    public void setStatus(String status) { this.status = status; }
+
 
     // For easy display
     @Override
@@ -56,4 +51,5 @@ public class Appointment {
                 ", Time: " + timeSlot +
                 ", Status: " + status;
     }
+
 }

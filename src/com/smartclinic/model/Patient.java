@@ -1,7 +1,7 @@
 package com.smartclinic.model;
 
 public class Patient {
-    private String id;
+    private final String id;
     private String name;
     private int age;
     private String contact;
